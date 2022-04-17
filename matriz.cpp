@@ -45,7 +45,7 @@ int interseccao(vector <int> a, vector <int> b)
 	return retorno;
 }
 
-float calcula_Taxa_Mutacao(vector <Matriz> populacao, float taxaminima)
+float calcula_Taxa_Mutacao(vector <ProblemInstance> populacao, float taxaminima)
 {
 	return((taxaminima/(1- (exp((-(populacao[0].aptidao) -(populacao[populacao.size() -1].aptidao))/(populacao[0].aptidao))))));
 }
@@ -77,7 +77,7 @@ vector <int>::iterator busca_Binaria(vector <int> &A, int a)
 	}
 }
 
-Matriz::Matriz()
+ProblemInstance::ProblemInstance()
 {
 	this->custo_coluna = NULL;
 	this->ncolunas = 0;
@@ -85,7 +85,7 @@ Matriz::Matriz()
 	this->aptidao = 0;
 }
 
-const bool Matriz::operator<(const Matriz rhs) const
+const bool ProblemInstance::operator<(const ProblemInstance rhs) const
 {
 	if(this->aptidao < rhs.aptidao)
 		return true;
@@ -93,7 +93,24 @@ const bool Matriz::operator<(const Matriz rhs) const
 		return false;
 }
 
-void Matriz::criarMatrizFilha(Matriz &destino)
+ProblemInstance& ProblemInstance::operator=(const ProblemInstance& p) {
+	this->nlinhas = p.nlinhas;
+	this->ncolunas = p.ncolunas;
+	this->aptidao = p.aptidao;
+	this->colunas_presentes = p.colunas_presentes;
+	this->custo_coluna = new float[this->ncolunas];
+	this->ordem_custo = new size_t[this->ncolunas];
+	for(int i; i < this->ncolunas; ++i) {
+		this->custo_coluna[i] = p.custo_coluna[i];
+		this->ordem_custo[i] = p.ordem_custo[i];
+	}
+	this->colunas_presentes = p.colunas_presentes;
+	this->colunas = p.colunas;
+	this->linhas = p.linhas;
+	return *this;
+}
+
+void ProblemInstance::criarMatrizFilha(ProblemInstance &destino)
 {
 	destino.ncolunas = this->ncolunas;
 	destino.nlinhas = this->nlinhas;
@@ -114,13 +131,13 @@ void Matriz::criarMatrizFilha(Matriz &destino)
 	}
 }
 
-Matriz::~Matriz()
+ProblemInstance::~ProblemInstance()
 {
 //	if(this->custo_coluna != NULL)
 //		delete this->custo_coluna;
 }
 
-bool Matriz::checar_Validade()
+bool ProblemInstance::checar_Validade()
 {
 	for(int i =0; i<this->linhas.size(); ++i)
 		if(this->linhas[i].size() < 1)
@@ -129,7 +146,7 @@ bool Matriz::checar_Validade()
 	return true;
 }
 
-pair <int, int> Matriz::escolher_Casal(vector <Matriz> populacao)
+pair <int, int> ProblemInstance::escolher_Casal(vector <ProblemInstance> populacao)
 {
 	vector <int> probabilidades; //em fracoes de 10000
 	double soma=0;
@@ -178,7 +195,7 @@ pair <int, int> Matriz::escolher_Casal(vector <Matriz> populacao)
 	return retorno;
 }
 
-void Matriz::gerar_Mutacao(vector <Matriz> &populacao, size_t individuo)
+void ProblemInstance::gerar_Mutacao(vector <ProblemInstance> &populacao, size_t individuo)
 {
 	vector <int> colunas_auxiliares;
 	vector <int> novas_colunas;
@@ -221,10 +238,10 @@ void Matriz::gerar_Mutacao(vector <Matriz> &populacao, size_t individuo)
 	while(populacao[individuo].eliminar_Redundancia() > 0);
 }
 
-void Matriz::gerar_Descendente(vector <Matriz> &populacao, float taxa_mutacao)
+void ProblemInstance::gerar_Descendente(vector <ProblemInstance> &populacao, float taxa_mutacao)
 {
 	pair <int,int> casal = this->escolher_Casal(populacao);
-	Matriz nova;
+	ProblemInstance nova;
 	this->criarMatrizFilha(nova);
 	populacao.push_back(nova);
 	size_t inova = populacao.size() -1;
@@ -260,61 +277,7 @@ void Matriz::gerar_Descendente(vector <Matriz> &populacao, float taxa_mutacao)
 	sort(populacao.begin(), populacao.end());
 }
 
-int Matriz::ler_Matriz_Stdin()
-{
-	string ler_str;
-	int ler_int;
-	float ler_float;
-
-	cin >> ler_str;
-	if(ler_str == "LINHAS")
-		cin >> this->nlinhas;
-	else
-		return 1;
-
-	cin >> ler_str;
-	if(ler_str == "COLUNAS")
-		cin >> this->ncolunas;
-	else
-		return 1;
-
-	cin >> ler_str;
-	if(ler_str != "DADOS")
-		return 1;
-
-	this->custo_coluna = new float [this->ncolunas];
-	for(int i=0; i<this->nlinhas; ++i)
-	{
-		vector <int> col;
-		this->linhas.push_back(col);
-	}
-
-	for(int i=0; i<this->ncolunas; ++i)
-	{
-		cin >> ler_int;
-		if(ler_int != i+1)
-			return 1;
-
-		cin >> ler_float;
-		if(ler_float < 0.0)
-			return 1;
-
-		this->custo_coluna[i] = ler_float;
-		getline(cin, ler_str);
-		vector <int> linhas;
-		linhas = le_Inteiros(ler_str);
-
-		for(int j=0; j< linhas.size(); ++j)
-			this->linhas[linhas[j]-1].push_back(i+1);
-
-		this->colunas.push_back(linhas);
-		this->colunas_presentes.push_back(i+1);	
-	}
-
-	return 0;			
-}
-
-float Matriz::calcula_Aptidao()
+float ProblemInstance::calcula_Aptidao()
 {
 	float retorno = 0;
 
@@ -325,7 +288,7 @@ float Matriz::calcula_Aptidao()
 	return retorno;
 }
 
-void Matriz::remover_Coluna(int r)
+void ProblemInstance::remover_Coluna(int r)
 {
 	if(r<1 || r > this->colunas.size())
 	{
@@ -360,7 +323,7 @@ void Matriz::remover_Coluna(int r)
 	*/
 }
 
-int Matriz::eliminar_Redundancia()
+int ProblemInstance::eliminar_Redundancia()
 {
 	vector <int> redundancias;
 
@@ -390,11 +353,11 @@ int Matriz::eliminar_Redundancia()
 	return int(redundancias.size());
 }
 
-void Matriz::gerar_Populacao_Inicial(vector <Matriz> &populacao, int n)
+void ProblemInstance::generateStartingPopulation(vector <ProblemInstance> &populacao, int n)
 {
 	for(int i=0; i<n; ++i)
 	{
-		Matriz nova;
+		ProblemInstance nova;
 		this->criarMatrizFilha(nova);
 		size_t index_nova = populacao.size();
 		populacao.push_back(nova);
@@ -447,7 +410,7 @@ void Matriz::gerar_Populacao_Inicial(vector <Matriz> &populacao, int n)
 	}
 }
 
-void Matriz::imprime_Matriz()
+void ProblemInstance::imprime_Matriz()
 {
 	cout << "Aptidao = " << this->aptidao << '\n';
 	cout << "Colunas presentes:\n";
